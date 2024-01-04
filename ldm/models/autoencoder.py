@@ -2,26 +2,38 @@ import torch
 import torch.nn.functional as F
 from contextlib import contextmanager
 
-from ldm.modules.diffusionmodules.model import Encoder, Decoder
-from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
-from ldm.modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
+import sys
+from pathlib import Path
 
-from ldm.util import instantiate_from_config
-from ldm.modules.ema import LitEma
+sys.path.insert(0, str(Path(__file__).parents[1]))
+
+from ..modules.diffusionmodules.model import Encoder, Decoder
+from ..modules.distributions.distributions import DiagonalGaussianDistribution
+from ..modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
+
+from ..util import instantiate_from_config
+from ..modules.ema import LitEma
+
 
 class VQModelTorch(torch.nn.Module):
-    def __init__(self,
-                 ddconfig,
-                 n_embed,
-                 embed_dim,
-                 remap=None,
-                 sane_index_shape=False,  # tell vector quantizer to return indices as bhw
-                 ):
+    def __init__(
+        self,
+        ddconfig,
+        n_embed,
+        embed_dim,
+        remap=None,
+        sane_index_shape=False,  # tell vector quantizer to return indices as bhw
+    ):
         super().__init__()
         self.encoder = Encoder(**ddconfig)
         self.decoder = Decoder(**ddconfig)
-        self.quantize = VectorQuantizer(n_embed, embed_dim, beta=0.25,
-                                        remap=remap, sane_index_shape=sane_index_shape)
+        self.quantize = VectorQuantizer(
+            n_embed,
+            embed_dim,
+            beta=0.25,
+            remap=remap,
+            sane_index_shape=sane_index_shape,
+        )
         self.quant_conv = torch.nn.Conv2d(ddconfig["z_channels"], embed_dim, 1)
         self.post_quant_conv = torch.nn.Conv2d(embed_dim, ddconfig["z_channels"], 1)
 
@@ -49,16 +61,18 @@ class VQModelTorch(torch.nn.Module):
         dec = self.decode(h, force_not_quantize)
         return dec
 
+
 class AutoencoderKLTorch(torch.nn.Module):
-    def __init__(self,
-                 ddconfig,
-                 embed_dim,
-                 ):
+    def __init__(
+        self,
+        ddconfig,
+        embed_dim,
+    ):
         super().__init__()
         self.encoder = Encoder(**ddconfig)
         self.decoder = Decoder(**ddconfig)
         assert ddconfig["double_z"]
-        self.quant_conv = torch.nn.Conv2d(2*ddconfig["z_channels"], 2*embed_dim, 1)
+        self.quant_conv = torch.nn.Conv2d(2 * ddconfig["z_channels"], 2 * embed_dim, 1)
         self.post_quant_conv = torch.nn.Conv2d(embed_dim, ddconfig["z_channels"], 1)
         self.embed_dim = embed_dim
 
@@ -85,15 +99,17 @@ class AutoencoderKLTorch(torch.nn.Module):
         dec = self.decode(z)
         return dec
 
+
 class EncoderKLTorch(torch.nn.Module):
-    def __init__(self,
-                 ddconfig,
-                 embed_dim,
-                 ):
+    def __init__(
+        self,
+        ddconfig,
+        embed_dim,
+    ):
         super().__init__()
         self.encoder = Encoder(**ddconfig)
         assert ddconfig["double_z"]
-        self.quant_conv = torch.nn.Conv2d(2*ddconfig["z_channels"], 2*embed_dim, 1)
+        self.quant_conv = torch.nn.Conv2d(2 * ddconfig["z_channels"], 2 * embed_dim, 1)
         self.embed_dim = embed_dim
 
     def encode(self, x, sample_posterior=True, return_moments=False):
@@ -108,8 +124,10 @@ class EncoderKLTorch(torch.nn.Module):
             return z, moments
         else:
             return z
+
     def forward(self, x, sample_posterior=True, return_moments=False):
         return self.encode(x, sample_posterior, return_moments)
+
 
 class IdentityFirstStage(torch.nn.Module):
     def __init__(self, *args, vq_interface=False, **kwargs):
@@ -129,4 +147,3 @@ class IdentityFirstStage(torch.nn.Module):
 
     def forward(self, x, *args, **kwargs):
         return x
-
