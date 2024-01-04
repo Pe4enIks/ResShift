@@ -1,3 +1,7 @@
+# <div align="center"> DISCLAIMER</div>
+
+I want to use the ResShift project as a git submodule, but I need to do some changes to the submodule, so I've created this fork. You can find all the links in the original README.md below.
+
 # ResShift: Efficient Diffusion Model for Image Super-resolution by Residual Shifting (NeurIPS 2023, Spotlight) 
 
 [Zongsheng Yue](https://zsyoaoa.github.io/), [Jianyi Wang](https://iceclear.github.io/), [Chen Change Loy](https://www.mmlab-ntu.com/person/ccloy/) 
