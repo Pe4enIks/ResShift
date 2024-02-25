@@ -207,7 +207,8 @@ class ResShiftSampler(BaseSampler):
         return im_sr_tensor
 
     def inference_single(self, im_lq: np.ndarray):
-        im_lq_tensor = util_image.img2tensor(im_lq).to(self.device)  # 1 x c x h x w
+        # 1 x c x h x w
+        im_lq_tensor = util_image.img2tensor(im_lq).to(self.device) / 255.0
         im_sr_tensor = self._process_per_image(im_lq_tensor, False)
         im_sr = util_image.tensor2img(im_sr_tensor, rgb2bgr=True, min_max=(0.0, 1.0))
         return im_sr
